@@ -12,6 +12,7 @@ public class ConfigManager {
     public static final String DATABASE_URL = "url_to_your_database";
     public static final String DATABASE_USERNAME = "username_to_your_database";
     public static final String DATABASE_PASSWORD = "password_to_your_database";
+    private static final String BOT_OWNER_ID = "YOUR_DISCORD_ID_HERE";
 
 
 
@@ -30,6 +31,9 @@ public class ConfigManager {
     }
     public static String getQueueID() {
         return QueueID;
+    }
+    public static String getBotOwnerId() {
+        return BOT_OWNER_ID;
     }
 
 
