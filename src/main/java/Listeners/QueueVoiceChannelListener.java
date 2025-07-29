@@ -1,6 +1,7 @@
 package Listeners;
 
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -34,6 +35,12 @@ public class QueueVoiceChannelListener extends ListenerAdapter {
             ConfigManager.logger("❌ Usuario " + event.getMember().getEffectiveName() + " abandonó el canal de voz de la cola: " + voiceChannel.getName());
         }
     }
+    private void handleUserJoinQueue(Member member) {
+        // Handle user joining the queue voice channel
+
+
+    }
+
 
 }
 // Fabricio YV 2025 | Project DynamicQueue for subject "ORIENTED TO OBJECT PROGRAMMING" at Universidad Nacional de Ingeneria | Computer Science
