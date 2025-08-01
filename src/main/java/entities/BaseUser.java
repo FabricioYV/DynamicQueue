@@ -29,6 +29,7 @@ public abstract class BaseUser {
     public String getDiscordID(){
         return discordID;
     }
+
     public void setDiscordID(String discordID){
         this.discordID = discordID;
     }

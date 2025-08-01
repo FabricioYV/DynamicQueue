@@ -1,6 +1,5 @@
 package services;
 
-import sun.security.krb5.Config;
 import utils.ConfigManager;
 
 import java.sql.Connection;

@@ -5,15 +5,23 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+import services.DatabaseManager;
 import utils.ConfigManager;
 
 public class DiscordBotManager {
-
+    private DatabaseManager dbManager;
     private JDA jda;
 
     public void StartBot()  {
         // Code to initialize and start the Discord bot
         try{
+            //Initialize database connection
+            dbManager = new DatabaseManager();
+            if(!dbManager.initialize()){
+                ConfigManager.logger("Error connecting to the database");
+                return;
+            }
+
             jda = JDABuilder.createDefault(ConfigManager.getToken())
                     .enableIntents(
                             GatewayIntent.GUILD_MESSAGES,

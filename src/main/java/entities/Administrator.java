@@ -25,6 +25,7 @@ public class Administrator extends BaseUser {
     }
     @Override
     public String getDisplayName() {
+        //Emojis for bot owner and admin
         String emoji = isBotOwner ? "👑" : "🛡️";
         return emoji + " " + username + " (" + adminLevel + ")";
     }
