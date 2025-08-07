@@ -1,5 +1,7 @@
 package Listeners;
 
+import MatchMaking.Match;
+import MatchMaking.MatchMakingSystem;
 import entities.Administrator;
 import entities.BaseUser;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -11,13 +13,17 @@ import services.UserFactory;
 import utils.ConfigManager;
 
 import java.awt.*;
+import java.util.Map;
 
 public class CommandListener extends ListenerAdapter {
 
     private UserDAO userDAO;
+    private MatchMakingSystem matchMakingSystem;
 
-    public CommandListener(DatabaseManager dbManager) {
+
+    public CommandListener(DatabaseManager dbManager, MatchMakingSystem matchmakingsystem) {
         this.userDAO = new UserDAO(dbManager);
+        this.matchMakingSystem = matchmakingsystem;
 
     }
     @Override
@@ -61,6 +67,7 @@ public class CommandListener extends ListenerAdapter {
                     }
                 }
             }
+            case "matches","partidas" -> handleActiveMatchesCommand(event,user);
         }
 
 
@@ -127,7 +134,42 @@ public class CommandListener extends ListenerAdapter {
 
 
     }
+    private void handleActiveMatchesCommand(MessageReceivedEvent event,BaseUser user) {
+        //Command exclusive for administrators
+        Map<String, Match> activeMatches = matchMakingSystem.getActiveMatches();
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("Active Matches")
+                .setColor(Color.GREEN)
+                .setFooter("DynamicQueue", null);
+        if (activeMatches.isEmpty()) {
+            embed.setDescription("No active matches");
+        } else {
+            StringBuilder description = new StringBuilder();
+            description.append("**Active matches:** ").append(activeMatches.size()).append("\n\n");
+            int matchCount = 1;
+            for (Match match : activeMatches.values()) {
+                description.append("**").append(matchCount).append(". ").append(match.getMatchId()).append("**\n");
+                description.append("**Players:**").append(match.getTotalPlayers()).append(" (").append(match.getTeam1().size()).append(" vs ").append(match.getTeam2().size()).append(")\n");
 
+                description.append("**Team 1:** ");
+                description.append(match.getTeam1().stream()
+                        .map(BaseUser::getUsername)
+                        .reduce("", (a, b) -> a.isEmpty() ? b : a + ", " + b));
+                description.append("\n");
+
+                description.append("**Team 2:** ");
+                description.append(match.getTeam2().stream()
+                        .map(BaseUser::getUsername)
+                        .reduce("", (a, b) -> a.isEmpty() ? b : a + ", " + b));
+                description.append("\n");
+
+                description.append("**Status:** ").append(match.isActive() ? "In countdown" : "Started").append("\n\n");
+                matchCount++;
+            }
+            embed.setDescription(description.toString());
+        }
+        event.getChannel().sendMessageEmbeds(embed.build()).queue();
+    }
     private void handleResetCommand(MessageReceivedEvent event, String[] args, Administrator admin) {
         //Command exclusive for owner bot
         EmbedBuilder embed = new EmbedBuilder()

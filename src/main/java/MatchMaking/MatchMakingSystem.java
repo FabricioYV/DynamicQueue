@@ -130,7 +130,7 @@ public class MatchMakingSystem {
 
         for(Member member : members){
             BaseUser user = UserFactory.createUser(member);  //Create BaseUser from a discord member.
-            if(userDAO.userExists(user.getDiscordID())){}
+            if(userDAO.userExists(user.getDiscordID())){
                 BaseUser dbUser = userDAO.getUser(user.getDiscordID());
                 if(dbUser != null){
                     players.add(dbUser);
@@ -138,6 +138,11 @@ public class MatchMakingSystem {
                     ConfigManager.logger("User " + user.getUsername() + " not found in database");
                     return new ArrayList<>();  //return null array.
                 }
+            }else{
+                ConfigManager.logger("User " + user.getUsername() + " is not registered");
+                return new ArrayList<>();  //return null array.
+            }
+
         }
         return players;
     }

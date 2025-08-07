@@ -11,7 +11,7 @@ public class RegularUser extends BaseUser{
         // Comandos permitidos para usuarios regulares
         return switch (command.toLowerCase()) {
             case "register", "registro", "profile", "perfil",
-                 "queue", "cola", "leave", "salir", "stats", "estadisticas" -> true;
+                 "queue", "cola", "leave", "salir","matches","partidas", "stats", "estadisticas" -> true;
             default -> false;
         };
     }
