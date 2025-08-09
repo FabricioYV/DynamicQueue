@@ -93,6 +93,23 @@ public class UserDAO {
         return null;
 
     }
+    public boolean updateUser(BaseUser user){
+        String sql = "UPDATE users SET wins = ?, losses = ?, elo = ?, rank = ? WHERE discord_id = ?";
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, user.getWins());
+            stmt.setInt(2, user.getLosses());
+            stmt.setInt(3, user.getElo());
+            stmt.setString(4, user.getRank().name());
+            stmt.setString(5, user.getDiscordID());
+
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            ConfigManager.logger("Error updating user: " + e.getMessage());
+            return false;
+        }
+    }
     public boolean userExists(String discordId) {
         String sql = "SELECT COUNT(*) FROM users WHERE discord_id = ?";
         try (Connection conn = dbManager.getConnection();

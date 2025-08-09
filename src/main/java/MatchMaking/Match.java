@@ -14,7 +14,26 @@ public class Match {
     private final int totalPlayers;
     private final ScheduledFuture<?> countdown;
     private final long startTime;
+    private MatchResult result;
+    private boolean isCompleted;
 
+    public enum MatchResult {
+        TEAM1_WIN, TEAM2_WIN, DRAW
+    }
+    public void setResult(MatchResult result) {
+        this.result = result;
+        this.isCompleted = true;
+    }
+
+    public MatchResult getResult() {
+        return result;
+    }
+
+    public boolean isCompleted() {
+        return isCompleted;
+    }
+
+    //End
     public Match(String matchId, List<BaseUser> team1, List<BaseUser> team2, int totalPlayers, ScheduledFuture<?> countdown) {
         this.matchId = matchId;
         this.team1 = new ArrayList<>(team1);

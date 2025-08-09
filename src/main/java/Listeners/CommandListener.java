@@ -1,7 +1,6 @@
 package Listeners;
 
-import MatchMaking.Match;
-import MatchMaking.MatchMakingSystem;
+import MatchMaking.*;
 import entities.Administrator;
 import entities.BaseUser;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -68,10 +67,143 @@ public class CommandListener extends ListenerAdapter {
                 }
             }
             case "matches","partidas" -> handleActiveMatchesCommand(event,user);
+            case "winner" ,"ganador" -> {
+                if (user instanceof Administrator ) {
+                    Administrator admin = (Administrator) user;
+                    handleWinnerCommand(event, args, admin);
+                }
+            }
         }
 
 
 
+    }
+    private void handleWinnerCommand(MessageReceivedEvent event, String[] args, Administrator admin) {
+        if (args.length < 3){
+            EmbedBuilder embed = new EmbedBuilder()
+                    .setTitle("❌ Uso incorrecto")
+                    .setDescription("Uso: `!winner <matchId> <1|2>`\n1 = Team 1 wins, 2 = Team 2 wins")
+                    .setColor(Color.RED)
+                    .setFooter("DynamicQueue", null);
+
+            event.getChannel().sendMessageEmbeds(embed.build()).queue();
+            return;
+        }
+        String matchId = args[1];
+        String winnerTeam = args[2];
+
+        Match match = matchMakingSystem.getActiveMatches().get(matchId);
+        if (match == null) {
+            EmbedBuilder embed = new EmbedBuilder()
+                    .setTitle("❌ Match not found")
+                    .setDescription("No match found with ID: " + matchId)
+                    .setColor(Color.RED)
+                    .setFooter("DynamicQueue", null);
+
+            event.getChannel().sendMessageEmbeds(embed.build()).queue();
+            return;
+        }
+        Match.MatchResult result;
+        if ("1".equals(winnerTeam)) {
+            result = Match.MatchResult.TEAM1_WIN;
+        } else if ("2".equals(winnerTeam)) {
+            result = Match.MatchResult.TEAM2_WIN;
+        } else {
+            EmbedBuilder embed = new EmbedBuilder()
+                    .setTitle("❌ Invalid winner team")
+                    .setDescription("Winner team must be 1 or 2")
+                    .setColor(Color.RED)
+                    .setFooter("DynamicQueue", null);
+
+            event.getChannel().sendMessageEmbeds(embed.build()).queue();
+            return;
+        }
+
+        //process the match result
+        processMatchResult(match, result, event);
+
+    }
+    private void processMatchResult(Match match, Match.MatchResult result,MessageReceivedEvent event) {
+        match.setResult(result);
+
+        StringBuilder resultMessage = new StringBuilder();
+        resultMessage.append("🏆 **Match Finalizada: ").append(match.getMatchId()).append("**\n\n");
+
+        if (result == Match.MatchResult.TEAM1_WIN) {
+            resultMessage.append("🥇 **Team 1 GANA!**\n");
+            processTeamResult(match.getTeam1(), match.getTeam2(), true, resultMessage);
+        } else {
+            resultMessage.append("🥇 **Team 2 GANA!**\n");
+            processTeamResult(match.getTeam2(), match.getTeam1(), true, resultMessage);
+        }
+
+        //Finish the match
+        matchMakingSystem.endMatch(match.getMatchId());
+
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("Match Result")
+                .setDescription(resultMessage.toString())
+                .setColor(Color.GREEN)
+                .setFooter("DynamicQueue", null);
+        event.getChannel().sendMessageEmbeds(embed.build()).queue();
+
+    }
+    private void processTeamResult(java.util.List<BaseUser> winningTeam, java.util.List<BaseUser> losingTeam, boolean isWin, StringBuilder resultMessage) {
+        double winnerAvgElo = winningTeam.stream().mapToInt(BaseUser::getElo).average().orElse(EloSystem.getBaseRating());
+        double loserAvgElo = losingTeam.stream().mapToInt(BaseUser::getElo).average().orElse(EloSystem.getBaseRating());
+
+        //Calculate new ELO ratings
+        EloSystem.EloResult eloResult = EloSystem.calculateEloChange(winnerAvgElo,loserAvgElo);
+        resultMessage.append("**Winners:**\n");
+
+        for(BaseUser winner : winningTeam){
+            updatePlayerStats(winner,true, eloResult.getWinnerChange(),resultMessage);
+        }
+        resultMessage.append("\n**Losers:**\n");
+        for(BaseUser loser : losingTeam){
+            updatePlayerStats(loser,false, eloResult.getLosserChange(),resultMessage);
+        }
+
+    }
+    private void updatePlayerStats(BaseUser player, boolean won, int eloChange, StringBuilder resultMessage) {
+        //Update player stats based on win/loss
+        if (won) {
+            player.setWins(player.getWins() + 1);
+        } else {
+            player.setLosses(player.getLosses() + 1);
+        }
+        //Update ELO rating
+        int oldElo = player.getElo();
+        int newElo = oldElo + eloChange;
+        player.setElo(newElo);
+
+        //Check if change in rank is needed
+        Ranks oldRank = player.getRank();
+        Ranks newRank = RankSystem.calculateRankFromElo(newElo);
+
+        boolean rankChanged = oldRank != newRank;
+
+        if(rankChanged){
+            player.setRank(newRank);
+        }
+
+        //Save a database
+        userDAO.updateUser(player);
+
+        //Build a result message
+        String eloChangeStr = (eloChange >= 0 ? "+" : "") + eloChange;
+        resultMessage.append("• ").append(player.getUsername())
+                .append(": ").append(oldElo).append(" → ").append(newElo)
+                .append(" (").append(eloChangeStr).append(")");
+
+        if (rankChanged) {
+            if (newRank.getRankId() > oldRank.getRankId()) {
+                    resultMessage.append(" 🎉 **¡PROMOTION to ").append(newRank.getRankName()).append("!**");
+            } else {
+                resultMessage.append("  Descent to ").append(newRank.getRankName());
+            }
+        }
+        resultMessage.append("\n");
     }
     private void handleRegisterCommand(MessageReceivedEvent event, BaseUser user) {
         if(userDAO.userExists(user.getDiscordID())){

@@ -1,5 +1,6 @@
 package entities;
 
+import MatchMaking.EloSystem;
 import MatchMaking.Ranks;
 
 public abstract class BaseUser {
@@ -9,6 +10,7 @@ public abstract class BaseUser {
     protected int wins;
     protected int losses;
     protected boolean inQueue;
+    protected int elo;
 
     public BaseUser(String discordID, String username) {
         this.discordID = discordID;
@@ -17,6 +19,7 @@ public abstract class BaseUser {
         this.wins = 0;
         this.losses = 0;
         this.inQueue = false;
+        this.elo = (int) EloSystem.getBaseRating();
     }
 
     //Methods used by child classes
@@ -70,5 +73,13 @@ public abstract class BaseUser {
 
     public void setInQueue(boolean inQueue) {
         this.inQueue = inQueue;
+    }
+
+    public int getElo() {
+        return elo;
+    }
+
+    public void setElo(int elo) {
+        this.elo = elo;
     }
 }
